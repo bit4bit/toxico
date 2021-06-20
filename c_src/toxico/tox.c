@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "tox.h"
+#include "tools.h"
 
 static void *tox_thread_loop(void *user_data);
 
@@ -12,6 +13,33 @@ UNIFEX_TERM version(UnifexEnv *env) {
   uint32_t minor = tox_version_minor();
   uint32_t patch = tox_version_patch();
   return version_result_ok(env, major, minor, patch);
+}
+
+UNIFEX_TERM bootstrap(UnifexEnv *env, char *host, unsigned int port, char *hex_public_key) {
+  Tox *tox = (Tox *)env->state;
+  char public_key[TOX_PUBLIC_KEY_SIZE];
+  TOX_ERR_BOOTSTRAP error;
+
+  if (tox == NULL)
+    return unifex_raise(env, "not initialize state, please call `init` first");
+
+  if (hex_string_to_bin(hex_public_key, strlen(hex_public_key), &public_key, TOX_PUBLIC_KEY_SIZE) < 0) {
+    return unifex_raise(env, "failed to convert hex public key to binary");
+  }
+
+  tox_bootstrap(env->state, host, port, &public_key, &error);
+  switch(error) {
+  case TOX_ERR_BOOTSTRAP_OK:
+    break;
+  case TOX_ERR_BOOTSTRAP_NULL:
+    return bootstrap_result_error(env, "null");
+  case TOX_ERR_BOOTSTRAP_BAD_HOST:
+    return bootstrap_result_error(env, "bad_host");
+  case TOX_ERR_BOOTSTRAP_BAD_PORT:
+    return bootstrap_result_error(env, "bad_port");
+  }
+
+  return bootstrap_result(env);
 }
 
 UNIFEX_TERM init(UnifexEnv *env) {

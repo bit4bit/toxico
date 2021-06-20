@@ -10,7 +10,7 @@ defmodule Toxico.BundlexProject do
   def natives(:linux) do
     [
       tox: [
-        sources: ["tox.c"],
+        sources: ["tox.c", "tools.c"],
         pkg_configs: ["toxcore"],
         libs: ["pthread"],
         interface: [:cnode],

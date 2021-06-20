@@ -24,6 +24,11 @@ defmodule Toxico do
     GenServer.call(name, :version)
   end
 
+  @spec add_bootstrap(GenServer.name(), String.t(), integer(), String.t()) :: :ok | {:error, :null} | {:error, :bad_host} | {:error, :port}
+  def add_bootstrap(name, host, port, public_key) when is_binary(host) and is_integer(port) and is_binary(public_key) do
+    GenServer.call(name, {:add_boostrap, host, port, public_key}, 60_000)
+  end
+
   # callbacks
 
   @impl true
@@ -47,7 +52,13 @@ defmodule Toxico do
     end
   end
 
-  defp call(cnode, fun, args \\ []) do
-    Unifex.CNode.call(cnode, fun, args)
+  @impl true
+  def handle_call({:add_boostrap, host, port, public_key}, _from, state) do
+    reply = call(state.cnode, :bootstrap, [host, port, public_key])
+    {:reply, reply, state}
+  end
+
+  defp call(cnode, fun, args \\ [], timeout \\ 5000) do
+    Unifex.CNode.call(cnode, fun, args, timeout)
   end
 end
