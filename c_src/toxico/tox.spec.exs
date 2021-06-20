@@ -1,0 +1,3 @@
+module Tox
+
+interface CNode
