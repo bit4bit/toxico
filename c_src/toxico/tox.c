@@ -83,7 +83,7 @@ UNIFEX_TERM self_get_name(UnifexEnv *env) {
 
   name_size = tox_self_get_name_size(state->tox);
   if (name_size == 0)
-    return self_get_name_result_ok(env, "");
+    return self_get_name_result(env, "");
 
   name = (unsigned char *)malloc(sizeof(unsigned char) * name_size + 1);
   if (name == NULL) return unifex_raise(env, "malloc");
@@ -91,7 +91,7 @@ UNIFEX_TERM self_get_name(UnifexEnv *env) {
   tox_self_get_name(state->tox, name);
   name[name_size] = '\0';
 
-  return self_get_name_result_ok(env, name);
+  return self_get_name_result(env, name);
 }
 
 UNIFEX_TERM self_set_status_message(UnifexEnv *env, char *message) {
@@ -119,7 +119,7 @@ UNIFEX_TERM self_get_status_message(UnifexEnv *env) {
 
   message_size = tox_self_get_status_message_size(state->tox);
   if (message_size == 0)
-    return self_get_status_message_result_ok(env, "");
+    return self_get_status_message_result(env, "");
 
   message = (unsigned char *)malloc(sizeof(unsigned char) * message_size + 1);
   if (message == NULL) return unifex_raise(env, "malloc");
@@ -127,7 +127,7 @@ UNIFEX_TERM self_get_status_message(UnifexEnv *env) {
   tox_self_get_status_message(state->tox, message);
   message[message_size] = '\0';
 
-  return self_get_status_message_result_ok(env, message);
+  return self_get_status_message_result(env, message);
 }
 
 UNIFEX_TERM bootstrap(UnifexEnv *env, char *host, unsigned int port, char *hex_public_key) {
