@@ -29,6 +29,7 @@ defmodule Toxico do
   @impl true
   def init(_opts) do
     {:ok, cnode} = Unifex.CNode.start_link(:tox)
+    :ok = call(cnode, :init)
 
     {:ok, %State{cnode: cnode}}
   end

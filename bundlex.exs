@@ -12,6 +12,7 @@ defmodule Toxico.BundlexProject do
       tox: [
         sources: ["tox.c"],
         pkg_configs: ["toxcore"],
+        libs: ["pthread"],
         interface: [:cnode],
         preprocessor: Unifex
       ]
