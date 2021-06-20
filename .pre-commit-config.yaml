@@ -19,7 +19,7 @@ repos:
       files: \.ex(s?)$
     - id: mix-format
       name: mix format
-      entry: mix format --check-formatted
+      entry: mix format
       language: system
       pass_filenames: false
     - id: mix-credo

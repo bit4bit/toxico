@@ -11,6 +11,7 @@ defmodule Toxico.BundlexProject do
     [
       tox: [
         sources: ["tox.c"],
+        pkg_configs: ["toxcore"],
         interface: [:cnode],
         preprocessor: Unifex
       ]
