@@ -15,3 +15,8 @@ spec self_get_name() :: {:ok :: label,  name :: string}
 
 spec self_set_status_message(message :: string) :: :ok | {:error :: label, atom()}
 spec self_get_status_message() :: {:ok :: label,  message :: string}
+
+type user_status :: :user_none | :user_busy | :user_away
+
+spec self_set_status(status :: user_status) :: :ok
+spec self_get_status() :: user_status

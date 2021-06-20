@@ -16,7 +16,7 @@ defmodule Toxico do
   defmodule Self do
     @moduledoc false
 
-    defstruct [:name, :status_message]
+    defstruct [:name, :status_message, :status]
   end
 
   def start_link(opts \\ []) do
@@ -42,6 +42,11 @@ defmodule Toxico do
   @spec set_status_message(GenServer.name(), String.t()) :: :ok | {:error, atom()}
   def set_status_message(tox, message) do
     GenServer.call(tox, {:set_status_message, message})
+  end
+
+  @spec set_status(GenServer.name(), :user_none | :user_away | :user_busy) :: :ok
+  def set_status(tox, status) when is_atom(status) do
+    GenServer.call(tox, {:set_status, status})
   end
 
   @spec self(GenServer.name()) :: %Self{}
@@ -78,8 +83,9 @@ defmodule Toxico do
   def handle_call(:self, _from, state) do
     {:ok, name} = call(state.cnode, :self_get_name)
     {:ok, message} = call(state.cnode, :self_get_status_message)
+    status = call(state.cnode, :self_get_status)
 
-    {:reply, struct(Self, %{name: name, status_message: message}), state}
+    {:reply, struct(Self, %{name: name, status_message: message, status: status}), state}
   end
   def handle_call({:set_name, name}, _from, state) do
     reply = call(state.cnode, :self_set_name, [name])
@@ -88,6 +94,11 @@ defmodule Toxico do
   end
   def handle_call({:set_status_message, message}, _from, state) do
     reply = call(state.cnode, :self_set_status_message, [message])
+
+    {:reply, reply, state}
+  end
+  def handle_call({:set_status, status}, _from, state) do
+    reply = call(state.cnode, :self_set_status, [status])
 
     {:reply, reply, state}
   end

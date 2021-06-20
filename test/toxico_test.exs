@@ -69,5 +69,15 @@ defmodule ToxicoTest do
         status_message: "Toxico works!"
       } = Toxico.self(tox)
     end
+
+    test "get status" do
+      tox = start_supervised!({Toxico, []})
+
+      :ok = Toxico.set_status(tox, :user_away)
+
+      assert %{
+        status: :user_away
+      } = Toxico.self(tox)
+    end
   end
 end

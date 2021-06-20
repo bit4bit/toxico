@@ -19,6 +19,45 @@ UNIFEX_TERM version(UnifexEnv *env) {
   return version_result_ok(env, major, minor, patch);
 }
 
+UNIFEX_TERM self_set_status(UnifexEnv *env, UserStatus status) {
+  State *state = (State *)env->state;
+
+  MUST_STATE(env);
+
+  switch(status) {
+  case USER_NONE:
+    tox_self_set_status(state->tox, TOX_USER_STATUS_NONE);
+    break;
+  case USER_AWAY:
+    tox_self_set_status(state->tox, TOX_USER_STATUS_AWAY);
+    break;
+  case USER_BUSY:
+    tox_self_set_status(state->tox, TOX_USER_STATUS_BUSY);
+    break;
+  }
+
+  return self_set_status_result(env);
+}
+
+UNIFEX_TERM self_get_status(UnifexEnv *env) {
+  State *state = (State *)env->state;
+  TOX_USER_STATUS status;
+
+  MUST_STATE(env);
+
+  status = tox_self_get_status(state->tox);
+  switch(status) {
+  case TOX_USER_STATUS_NONE:
+    return self_get_status_result(env, USER_NONE);
+  case TOX_USER_STATUS_AWAY:
+    return self_get_status_result(env, USER_AWAY);
+  case TOX_USER_STATUS_BUSY:
+    return self_get_status_result(env, USER_BUSY);
+  default:
+    return unifex_raise(env, "unimplemented");
+  }
+}
+
 UNIFEX_TERM self_set_name(UnifexEnv *env, char *name) {
   State *state = (State *)env->state;
   TOX_ERR_SET_INFO error;
