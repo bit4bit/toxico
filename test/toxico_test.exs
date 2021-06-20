@@ -53,5 +53,21 @@ defmodule ToxicoTest do
         name: "Toxico"
       } = Toxico.self(tox)
     end
+
+    test "set status message" do
+      tox = start_supervised!({Toxico, []})
+
+      :ok = Toxico.set_status_message(tox, "Toxico works!")
+    end
+
+    test "get status message" do
+      tox = start_supervised!({Toxico, []})
+
+      :ok = Toxico.set_status_message(tox, "Toxico works!")
+
+      assert %{
+        status_message: "Toxico works!"
+      } = Toxico.self(tox)
+    end
   end
 end

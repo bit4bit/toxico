@@ -55,6 +55,42 @@ UNIFEX_TERM self_get_name(UnifexEnv *env) {
   return self_get_name_result_ok(env, name);
 }
 
+UNIFEX_TERM self_set_status_message(UnifexEnv *env, char *message) {
+  State *state = (State *)env->state;
+  TOX_ERR_SET_INFO error;
+  size_t len = MIN(strlen(message), TOX_MAX_STATUS_MESSAGE_LENGTH - 1);
+
+  MUST_STATE(env);
+
+  tox_self_set_status_message(state->tox, message, len, &error);
+  switch(error) {
+  case TOX_ERR_SET_INFO_OK:
+    return self_set_status_message_result(env);
+  default:
+    return unifex_raise(env, "fail set message");
+  }
+}
+
+UNIFEX_TERM self_get_status_message(UnifexEnv *env) {
+  State *state = (State *)env->state;
+  unsigned char *message = NULL;
+  size_t message_size = 0;
+
+  MUST_STATE(env);
+
+  message_size = tox_self_get_status_message_size(state->tox);
+  if (message_size == 0)
+    return self_get_status_message_result_ok(env, "");
+
+  message = (unsigned char *)malloc(sizeof(unsigned char) * message_size + 1);
+  if (message == NULL) return unifex_raise(env, "malloc");
+
+  tox_self_get_status_message(state->tox, message);
+  message[message_size] = '\0';
+
+  return self_get_status_message_result_ok(env, message);
+}
+
 UNIFEX_TERM bootstrap(UnifexEnv *env, char *host, unsigned int port, char *hex_public_key) {
   State *state = (State *)env->state;
   char public_key[TOX_PUBLIC_KEY_SIZE];

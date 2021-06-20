@@ -12,3 +12,6 @@ spec bootstrap(host :: string, port :: unsigned, hex_public_key :: string) :: :o
 
 spec self_set_name(name :: string) :: :ok | {:error :: label, atom()}
 spec self_get_name() :: {:ok :: label,  name :: string}
+
+spec self_set_status_message(message :: string) :: :ok | {:error :: label, atom()}
+spec self_get_status_message() :: {:ok :: label,  message :: string}
