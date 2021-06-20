@@ -71,10 +71,12 @@ defmodule Toxico do
   end
   def handle_call(:self, _from, state) do
     {:ok, name} = call(state.cnode, :self_get_name)
+
     {:reply, struct(Self, %{name: name}), state}
   end
   def handle_call({:set_name, name}, _from, state) do
-    reply = call(state.cnode, {:self_set_name, name})
+    reply = call(state.cnode, :self_set_name, [name])
+
     {:reply, reply, state}
   end
 

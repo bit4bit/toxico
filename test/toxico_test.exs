@@ -1,5 +1,5 @@
 defmodule ToxicoTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   doctest Toxico
 
   describe "start link" do
@@ -25,7 +25,7 @@ defmodule ToxicoTest do
   end
 
   describe "bootstrap" do
-    @tag :skip
+
     test "single node tox" do
       tox = start_supervised!({Toxico, []})
 
@@ -33,14 +33,17 @@ defmodule ToxicoTest do
       port = 33_445
       public_key = "B3E5FA80DC8EBD1149AD2AB35ED8B85BD546DEDE261CA593234C619249419506"
 
-      {:ok, _} = Toxico.add_bootstrap(tox, host, port, public_key)
+      :ok = Toxico.add_bootstrap(tox, host, port, public_key)
     end
   end
 
   describe "identification" do
+    test "set name" do
+      tox = start_supervised!({Toxico, []})
 
-    # bit4bit: fail return bad name why?
-    @tag :skip
+      :ok = Toxico.set_name(tox, "Toxico")
+    end
+
     test "get name" do
       tox = start_supervised!({Toxico, []})
 

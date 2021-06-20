@@ -20,13 +20,13 @@ UNIFEX_TERM version(UnifexEnv *env) {
 }
 
 UNIFEX_TERM self_set_name(UnifexEnv *env, char *name) {
-  Tox *tox = (Tox *)env->state;
+  State *state = (State *)env->state;
   TOX_ERR_SET_INFO error;
   size_t len = MIN(strlen(name), TOX_MAX_NAME_LENGTH - 1);
 
   MUST_STATE(env);
 
-  tox_self_set_name(tox, name, len, &error);
+  tox_self_set_name(state->tox, name, len, &error);
   switch(error) {
   case TOX_ERR_SET_INFO_OK:
     return self_set_name_result(env);
@@ -36,28 +36,27 @@ UNIFEX_TERM self_set_name(UnifexEnv *env, char *name) {
 }
 
 UNIFEX_TERM self_get_name(UnifexEnv *env) {
-  Tox *tox = (Tox *)env->state;
+  State *state = (State *)env->state;
   unsigned char *name = NULL;
   size_t name_size = 0;
 
   MUST_STATE(env);
 
-  name_size = tox_self_get_name_size(tox);
+  name_size = tox_self_get_name_size(state->tox);
   if (name_size == 0)
     return self_get_name_result_ok(env, "");
 
   name = (unsigned char *)malloc(sizeof(unsigned char) * name_size + 1);
-  if (name == NULL) abort();
+  if (name == NULL) return unifex_raise(env, "malloc");
 
-  tox_self_get_name(tox, name);
+  tox_self_get_name(state->tox, name);
   name[name_size] = '\0';
 
-  // TODO(bit4bit): return bad name why?
   return self_get_name_result_ok(env, name);
 }
 
 UNIFEX_TERM bootstrap(UnifexEnv *env, char *host, unsigned int port, char *hex_public_key) {
-  Tox *tox = (Tox *)env->state;
+  State *state = (State *)env->state;
   char public_key[TOX_PUBLIC_KEY_SIZE];
   TOX_ERR_BOOTSTRAP error;
 
@@ -67,7 +66,7 @@ UNIFEX_TERM bootstrap(UnifexEnv *env, char *host, unsigned int port, char *hex_p
     return unifex_raise(env, "failed to convert hex public key to binary");
   }
 
-  tox_bootstrap(tox, host, port, public_key, &error);
+  tox_bootstrap(state->tox, host, port, public_key, &error);
   switch(error) {
   case TOX_ERR_BOOTSTRAP_OK:
     break;
@@ -84,7 +83,7 @@ UNIFEX_TERM bootstrap(UnifexEnv *env, char *host, unsigned int port, char *hex_p
 
 UNIFEX_TERM init(UnifexEnv *env) {
   TOX_ERR_NEW tox_error;
-  State *state = unifex_alloc_state(env);
+  State *state = (State *)unifex_alloc_state(env);
   struct Tox_Options tox_opts;
   Tox *tox = NULL;
 
