@@ -21,7 +21,8 @@ repos:
       name: mix format
       entry: mix format
       language: system
-      pass_filenames: false
+      pass_filenames: true
+      files: \.{ex,exs}$
     - id: mix-credo
       name: mix credo
       entry: mix credo
