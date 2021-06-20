@@ -8,6 +8,10 @@
 
 static void *tox_thread_loop(void *user_data);
 
+#define MUST_STATE(env) if(env->state == NULL) return unifex_raise(env, "not initialize state, please call `init` first")
+
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+
 UNIFEX_TERM version(UnifexEnv *env) {
   uint32_t major = tox_version_major();
   uint32_t minor = tox_version_minor();
@@ -15,19 +19,55 @@ UNIFEX_TERM version(UnifexEnv *env) {
   return version_result_ok(env, major, minor, patch);
 }
 
+UNIFEX_TERM self_set_name(UnifexEnv *env, char *name) {
+  Tox *tox = (Tox *)env->state;
+  TOX_ERR_SET_INFO error;
+  size_t len = MIN(strlen(name), TOX_MAX_NAME_LENGTH - 1);
+
+  MUST_STATE(env);
+
+  tox_self_set_name(tox, name, len, &error);
+  switch(error) {
+  case TOX_ERR_SET_INFO_OK:
+    return self_set_name_result(env);
+  default:
+    return unifex_raise(env, "fail set name");
+  }
+}
+
+UNIFEX_TERM self_get_name(UnifexEnv *env) {
+  Tox *tox = (Tox *)env->state;
+  unsigned char *name = NULL;
+  size_t name_size = 0;
+
+  MUST_STATE(env);
+
+  name_size = tox_self_get_name_size(tox);
+  if (name_size == 0)
+    return self_get_name_result_ok(env, "");
+
+  name = (unsigned char *)malloc(sizeof(unsigned char) * name_size + 1);
+  if (name == NULL) abort();
+
+  tox_self_get_name(tox, name);
+  name[name_size] = '\0';
+
+  // TODO(bit4bit): return bad name why?
+  return self_get_name_result_ok(env, name);
+}
+
 UNIFEX_TERM bootstrap(UnifexEnv *env, char *host, unsigned int port, char *hex_public_key) {
   Tox *tox = (Tox *)env->state;
   char public_key[TOX_PUBLIC_KEY_SIZE];
   TOX_ERR_BOOTSTRAP error;
 
-  if (tox == NULL)
-    return unifex_raise(env, "not initialize state, please call `init` first");
+  MUST_STATE(env);
 
   if (hex_string_to_bin(hex_public_key, strlen(hex_public_key), &public_key, TOX_PUBLIC_KEY_SIZE) < 0) {
     return unifex_raise(env, "failed to convert hex public key to binary");
   }
 
-  tox_bootstrap(env->state, host, port, &public_key, &error);
+  tox_bootstrap(tox, host, port, public_key, &error);
   switch(error) {
   case TOX_ERR_BOOTSTRAP_OK:
     break;
@@ -45,8 +85,11 @@ UNIFEX_TERM bootstrap(UnifexEnv *env, char *host, unsigned int port, char *hex_p
 UNIFEX_TERM init(UnifexEnv *env) {
   TOX_ERR_NEW tox_error;
   State *state = unifex_alloc_state(env);
-  Tox *tox = tox_new(NULL, &tox_error);
+  struct Tox_Options tox_opts;
+  Tox *tox = NULL;
 
+  tox_options_default(&tox_opts);
+  tox = tox_new(&tox_opts, &tox_error);
   if (tox_error != TOX_ERR_NEW_OK) {
     switch(tox_error) {
     case TOX_ERR_NEW_NULL:

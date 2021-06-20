@@ -13,6 +13,12 @@ defmodule Toxico do
     defstruct [:cnode]
   end
 
+  defmodule Self do
+    @moduledoc false
+
+    defstruct [:name]
+  end
+
   def start_link(opts \\ []) do
     {name, opts} = Keyword.pop(opts, :name, nil)
 
@@ -27,6 +33,14 @@ defmodule Toxico do
   @spec add_bootstrap(GenServer.name(), String.t(), integer(), String.t()) :: :ok | {:error, :null} | {:error, :bad_host} | {:error, :port}
   def add_bootstrap(name, host, port, public_key) when is_binary(host) and is_integer(port) and is_binary(public_key) do
     GenServer.call(name, {:add_boostrap, host, port, public_key}, 60_000)
+  end
+
+  def set_name(tox, name) do
+    GenServer.call(tox, {:set_name, name})
+  end
+
+  def self(name) do
+    GenServer.call(name, :self)
   end
 
   # callbacks
@@ -51,10 +65,16 @@ defmodule Toxico do
         {:reply, nil, state}
     end
   end
-
-  @impl true
   def handle_call({:add_boostrap, host, port, public_key}, _from, state) do
     reply = call(state.cnode, :bootstrap, [host, port, public_key])
+    {:reply, reply, state}
+  end
+  def handle_call(:self, _from, state) do
+    {:ok, name} = call(state.cnode, :self_get_name)
+    {:reply, struct(Self, %{name: name}), state}
+  end
+  def handle_call({:set_name, name}, _from, state) do
+    reply = call(state.cnode, {:self_set_name, name})
     {:reply, reply, state}
   end
 

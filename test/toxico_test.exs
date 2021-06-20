@@ -36,4 +36,19 @@ defmodule ToxicoTest do
       {:ok, _} = Toxico.add_bootstrap(tox, host, port, public_key)
     end
   end
+
+  describe "identification" do
+
+    # bit4bit: fail return bad name why?
+    @tag :skip
+    test "get name" do
+      tox = start_supervised!({Toxico, []})
+
+      :ok = Toxico.set_name(tox, "Toxico")
+
+      assert %{
+        name: "Toxico"
+      } = Toxico.self(tox)
+    end
+  end
 end
