@@ -37,7 +37,7 @@ defmodule ToxicoTest do
     end
   end
 
-  describe "identification" do
+  describe "self" do
     test "set name" do
       tox = start_supervised!({Toxico, []})
 
@@ -77,6 +77,14 @@ defmodule ToxicoTest do
 
       assert %{
         status: :user_away
+      } = Toxico.self(tox)
+    end
+
+    test "get connection status" do
+      tox = start_supervised!({Toxico, []})
+
+      assert %{
+        connection_status: :connection_none
       } = Toxico.self(tox)
     end
   end

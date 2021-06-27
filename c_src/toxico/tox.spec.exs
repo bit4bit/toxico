@@ -20,3 +20,6 @@ type user_status :: :user_none | :user_busy | :user_away
 
 spec self_set_status(status :: user_status) :: :ok
 spec self_get_status() :: user_status
+
+type connection_status :: :connection_none | :connection_tcp | :connection_udp
+spec self_get_connection_status() :: connection_status

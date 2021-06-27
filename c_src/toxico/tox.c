@@ -130,6 +130,25 @@ UNIFEX_TERM self_get_status_message(UnifexEnv *env) {
   return self_get_status_message_result(env, message);
 }
 
+UNIFEX_TERM self_get_connection_status(UnifexEnv *env) {
+  State *state = (State *)env->state;
+  TOX_CONNECTION status;
+
+  MUST_STATE(env);
+
+  status = tox_self_get_connection_status(state->tox);
+  switch(status) {
+  case TOX_CONNECTION_NONE:
+    return self_get_connection_status_result(env, CONNECTION_NONE);
+  case TOX_CONNECTION_UDP:
+    return self_get_connection_status_result(env, CONNECTION_UDP);
+  case TOX_CONNECTION_TCP:
+    return self_get_connection_status_result(env, CONNECTION_TCP);
+  default:
+    return unifex_raise(env, "unimplemented");
+  }
+}
+
 UNIFEX_TERM bootstrap(UnifexEnv *env, char *host, unsigned int port, char *hex_public_key) {
   State *state = (State *)env->state;
   char public_key[TOX_PUBLIC_KEY_SIZE];
