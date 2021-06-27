@@ -97,5 +97,15 @@ defmodule ToxicoTest do
 
       assert address != ""
     end
+
+    test "get nospam" do
+      tox = start_supervised!({Toxico, []})
+
+      %{
+        nospam: nospam
+      } = Toxico.self(tox)
+
+      assert nospam > 0
+    end
   end
 end

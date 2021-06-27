@@ -164,6 +164,16 @@ UNIFEX_TERM self_get_address(UnifexEnv *env) {
   return self_get_address_result(env, id_string);
 }
 
+UNIFEX_TERM self_get_nospam(UnifexEnv *env) {
+  State *state = (State *)env->state;
+  unsigned int nospam = 0;
+
+  MUST_STATE(env);
+
+  nospam = tox_self_get_nospam(state->tox);
+  self_get_nospam_result(env, nospam);
+}
+
 UNIFEX_TERM bootstrap(UnifexEnv *env, char *host, unsigned int port, char *hex_public_key) {
   State *state = (State *)env->state;
   char public_key[TOX_PUBLIC_KEY_SIZE];

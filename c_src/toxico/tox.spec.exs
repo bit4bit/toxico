@@ -26,3 +26,4 @@ spec self_get_connection_status() :: connection_status
 
 
 spec self_get_address() :: string
+spec self_get_nospam() :: nospam :: unsigned
