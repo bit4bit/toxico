@@ -16,7 +16,7 @@ defmodule Toxico do
   defmodule Self do
     @moduledoc false
 
-    defstruct [:name, :status_message, :status, :connection_status]
+    defstruct [:name, :status_message, :status, :connection_status, :address]
   end
 
   def start_link(opts \\ []) do
@@ -85,8 +85,17 @@ defmodule Toxico do
     message = call(state.cnode, :self_get_status_message)
     status = call(state.cnode, :self_get_status)
     connection_status = call(state.cnode, :self_get_connection_status)
+    address = call(state.cnode, :self_get_address)
 
-    {:reply, struct(Self, %{name: name, status_message: message, status: status, connection_status: connection_status}), state}
+    self = %{
+      name: name,
+      status_message: message,
+      status: status,
+      connection_status: connection_status,
+      address: address
+    }
+
+    {:reply, struct(Self, self), state}
   end
   def handle_call({:set_name, name}, _from, state) do
     reply = call(state.cnode, :self_set_name, [name])

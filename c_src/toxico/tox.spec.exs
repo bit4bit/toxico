@@ -23,3 +23,6 @@ spec self_get_status() :: user_status
 
 type connection_status :: :connection_none | :connection_tcp | :connection_udp
 spec self_get_connection_status() :: connection_status
+
+
+spec self_get_address() :: string

@@ -149,6 +149,21 @@ UNIFEX_TERM self_get_connection_status(UnifexEnv *env) {
   }
 }
 
+UNIFEX_TERM self_get_address(UnifexEnv *env) {
+  State *state = (State *)env->state;
+
+  char id_string[TOX_ADDRESS_SIZE * 2 + 1];
+  char bin_id[TOX_ADDRESS_SIZE];
+  MUST_STATE(env);
+
+  tox_self_get_address(state->tox, bin_id);
+  if (bin_id_to_string(bin_id, sizeof(bin_id), id_string, sizeof(id_string)) == -1) {
+    return unifex_raise(env, "failed to encode ID");
+  }
+
+  return self_get_address_result(env, id_string);
+}
+
 UNIFEX_TERM bootstrap(UnifexEnv *env, char *host, unsigned int port, char *hex_public_key) {
   State *state = (State *)env->state;
   char public_key[TOX_PUBLIC_KEY_SIZE];

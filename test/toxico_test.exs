@@ -87,5 +87,15 @@ defmodule ToxicoTest do
         connection_status: :connection_none
       } = Toxico.self(tox)
     end
+
+    test "get address" do
+      tox = start_supervised!({Toxico, []})
+
+      %{
+        address: address
+      } = Toxico.self(tox)
+
+      assert address != ""
+    end
   end
 end
