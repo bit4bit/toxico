@@ -130,25 +130,6 @@ UNIFEX_TERM self_get_status_message(UnifexEnv *env) {
   return self_get_status_message_result(env, message);
 }
 
-UNIFEX_TERM self_get_connection_status(UnifexEnv *env) {
-  State *state = (State *)env->state;
-  TOX_CONNECTION status;
-
-  MUST_STATE(env);
-
-  status = tox_self_get_connection_status(state->tox);
-  switch(status) {
-  case TOX_CONNECTION_NONE:
-    return self_get_connection_status_result(env, CONNECTION_NONE);
-  case TOX_CONNECTION_UDP:
-    return self_get_connection_status_result(env, CONNECTION_UDP);
-  case TOX_CONNECTION_TCP:
-    return self_get_connection_status_result(env, CONNECTION_TCP);
-  default:
-    return unifex_raise(env, "unimplemented");
-  }
-}
-
 UNIFEX_TERM self_get_address(UnifexEnv *env) {
   State *state = (State *)env->state;
 
@@ -200,6 +181,113 @@ UNIFEX_TERM bootstrap(UnifexEnv *env, char *host, unsigned int port, char *hex_p
   return bootstrap_result(env);
 }
 
+void on_connection_status_cb(Tox *tox, TOX_CONNECTION connection_status, void *user_data) {
+  UnifexEnv *env = (UnifexEnv *)user_data;
+  ConnectionStatus status;
+
+  switch(connection_status) {
+  case TOX_CONNECTION_NONE:
+    status = CONNECTION_NONE;
+    break;
+  case TOX_CONNECTION_UDP:
+    status = CONNECTION_UDP;
+    break;
+  case TOX_CONNECTION_TCP:
+    status = CONNECTION_TCP;
+    break;
+  default:
+    return;
+  }
+
+  send_connection_status(env, *(env->reply_to), 0, status);
+}
+
+void on_friend_request_cb(Tox *tox, const uint8_t *public_key, const uint8_t *message, size_t length, void *user_data) {
+  UnifexEnv *env = (UnifexEnv *)user_data;
+  State *state = (State *)env->state;
+  char public_key_id[TOX_PUBLIC_KEY_SIZE * 2 + 1];
+
+  if (bin_pubkey_to_string(public_key, TOX_PUBLIC_KEY_SIZE, public_key_id, sizeof(public_key_id)) < 0) {
+    send_friend_request_error(env, *(env->reply_to), 0, "fail to encode public key");
+    return;
+  }
+
+  send_friend_request(env, *(env->reply_to), 0, public_key_id, message);
+}
+
+UNIFEX_TERM friend_add(UnifexEnv *env, char *hex_address, char *message) {
+  State *state = (State *)env->state;
+  unsigned char address[TOX_ADDRESS_SIZE];
+  TOX_ERR_FRIEND_ADD error;
+
+  MUST_STATE(env);
+
+  if (hex_string_to_bin(hex_address, strlen(hex_address), &address, sizeof(address)) < 0) {
+    return unifex_raise(env, "failed to convert hex public key to binary");
+  }
+
+  tox_friend_add(state->tox, address, message, strlen(message), &error);
+  switch(error) {
+  case TOX_ERR_FRIEND_ADD_OK:
+    return friend_add_result(env);
+  case TOX_ERR_FRIEND_ADD_NULL:
+    return friend_add_result_error(env, "null");
+  case TOX_ERR_FRIEND_ADD_TOO_LONG:
+    return friend_add_result_error(env, "too_long");
+  case TOX_ERR_FRIEND_ADD_NO_MESSAGE:
+    return friend_add_result_error(env, "no_message");
+  case TOX_ERR_FRIEND_ADD_OWN_KEY:
+    return friend_add_result_error(env, "own_key");
+  case TOX_ERR_FRIEND_ADD_ALREADY_SENT:
+    return friend_add_result_error(env, "already_sent");
+  case TOX_ERR_FRIEND_ADD_BAD_CHECKSUM:
+    return friend_add_result_error(env, "bad_checksum");
+  case TOX_ERR_FRIEND_ADD_SET_NEW_NOSPAM:
+    return friend_add_result_error(env, "set_new_nospaw");
+  case TOX_ERR_FRIEND_ADD_MALLOC:
+    return friend_add_result_error(env, "malloc");
+  default:
+    return unifex_raise(env, "unimplemented");
+  }
+}
+
+UNIFEX_TERM friend_add_norequest(UnifexEnv *env, char *hex_public_key) {
+  State *state = (State *)env->state;
+  char public_key[TOX_PUBLIC_KEY_SIZE];
+  TOX_ERR_FRIEND_ADD error;
+  uint32_t friend_number = 0;
+
+  MUST_STATE(env);
+
+  if (hex_string_to_bin(hex_public_key, strlen(hex_public_key), &public_key, TOX_PUBLIC_KEY_SIZE) < 0) {
+    return unifex_raise(env, "failed to convert hex public key to binary");
+  }
+
+  friend_number = tox_friend_add_norequest(state->tox, public_key, &error);
+  switch(error) {
+  case TOX_ERR_FRIEND_ADD_OK:
+    return friend_add_norequest_result(env, friend_number);
+  case TOX_ERR_FRIEND_ADD_NULL:
+    return friend_add_norequest_result_error(env, "null");
+  case TOX_ERR_FRIEND_ADD_TOO_LONG:
+    return friend_add_norequest_result_error(env, "too_long");
+  case TOX_ERR_FRIEND_ADD_NO_MESSAGE:
+    return friend_add_norequest_result_error(env, "no_message");
+  case TOX_ERR_FRIEND_ADD_OWN_KEY:
+    return friend_add_norequest_result_error(env, "own_key");
+  case TOX_ERR_FRIEND_ADD_ALREADY_SENT:
+    return friend_add_norequest_result_error(env, "already_sent");
+  case TOX_ERR_FRIEND_ADD_BAD_CHECKSUM:
+    return friend_add_norequest_result_error(env, "bad_checksum");
+  case TOX_ERR_FRIEND_ADD_SET_NEW_NOSPAM:
+    return friend_add_norequest_result_error(env, "set_new_nospaw");
+  case TOX_ERR_FRIEND_ADD_MALLOC:
+    return friend_add_norequest_result_error(env, "malloc");
+  default:
+    return unifex_raise(env, "unimplemented");
+  }
+}
+
 UNIFEX_TERM init(UnifexEnv *env) {
   TOX_ERR_NEW tox_error;
   State *state = (State *)unifex_alloc_state(env);
@@ -218,6 +306,9 @@ UNIFEX_TERM init(UnifexEnv *env) {
     }
   }
 
+  tox_callback_friend_request(tox, on_friend_request_cb);
+  tox_callback_self_connection_status(tox, on_connection_status_cb);
+
   state->tox_done = 0;
   state->tox = tox;
   state->env = env;
@@ -226,7 +317,7 @@ UNIFEX_TERM init(UnifexEnv *env) {
     return unifex_raise(env, "failed to create state mutex");
   }
 
-  if (pthread_create(&state->tox_tid, NULL, tox_thread_loop, (void *)state) != 0) {
+  if (pthread_create(&state->tox_tid, NULL, tox_thread_loop, (void *)env) != 0) {
     return unifex_raise(env, "failed to create tox thread");
   }
 
@@ -234,10 +325,11 @@ UNIFEX_TERM init(UnifexEnv *env) {
 }
 
 static void *tox_thread_loop(void *user_data) {
-  State *state = (State *)user_data;
+  UnifexEnv *env = (UnifexEnv *)user_data;
+  State *state = (State *)env->state;
 
   while(!state->tox_done) {
-    tox_iterate(state->tox, (void *)state);
+    tox_iterate(state->tox, (void *)env);
     usleep(tox_iteration_interval(state->tox));
   }
 

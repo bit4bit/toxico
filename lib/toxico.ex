@@ -6,6 +6,7 @@ defmodule Toxico do
   use GenServer
 
   require Unifex.CNode
+  require Logger
 
   defmodule State do
     @moduledoc false
@@ -16,7 +17,7 @@ defmodule Toxico do
   defmodule Self do
     @moduledoc false
 
-    defstruct [:name, :status_message, :status, :connection_status, :address, :nospam]
+    defstruct [:name, :status_message, :status, :address, :nospam]
   end
 
   def start_link(opts \\ []) do
@@ -35,6 +36,23 @@ defmodule Toxico do
     GenServer.call(name, {:add_boostrap, host, port, public_key}, 60_000)
   end
 
+  @spec add_friend(GenServer.name(), String.t(), String) :: :ok | {:error, atom()}
+  def add_friend(name, address, message) do
+    GenServer.call(name, {:add_friend, address, message})
+  end
+
+  # bit4bit temporary only for testing
+  def add_default_bootstrap(name) do
+    dhts = [
+      {"185.25.116.107", 33_445, "DA4E4ED4B697F2E9B000EEFE3A34B554ACD3F45F5C96EAEA2516DD7FF9AF7B43"},
+      {"79.140.30.52", 33_445, "FFAC871E85B1E1487F87AE7C76726AE0E60318A85F6A1669E04C47EB8DC7C72D"},
+      {"46.101.197.175", 443, "CD133B521159541FB1D326DE9850F5E56A6C724B5B8E5EB5CD8D950408E95707"}
+    ]
+
+    for {host, port, public_key} <- dhts do
+      add_bootstrap(name, host, port, public_key)
+    end
+  end
   def set_name(tox, name) do
     GenServer.call(tox, {:set_name, name})
   end
@@ -84,7 +102,6 @@ defmodule Toxico do
     name = call(state.cnode, :self_get_name)
     message = call(state.cnode, :self_get_status_message)
     status = call(state.cnode, :self_get_status)
-    connection_status = call(state.cnode, :self_get_connection_status)
     address = call(state.cnode, :self_get_address)
     nospam = call(state.cnode, :self_get_nospam)
 
@@ -92,7 +109,6 @@ defmodule Toxico do
       name: name,
       status_message: message,
       status: status,
-      connection_status: connection_status,
       address: address,
       nospam: nospam
     }
@@ -114,7 +130,22 @@ defmodule Toxico do
 
     {:reply, reply, state}
   end
+  def handle_call({:add_friend, address, message}, _from, state) do
+    reply = call(state.cnode, :friend_add, [address, message])
+    {:reply, reply, state}
+  end
 
+  @impl true
+  def handle_info({:friend_request, public_key, message}, state) do
+    Logger.info "friend request: #{public_key} #{message}"
+    # bit4bit testing add as friend by default
+    :ok = call(state.cnode, :friend_add_norequest, [public_key])
+    {:noreply, state}
+  end
+  def handle_info({:connection_status, status}, state) do
+    Logger.info "connection status: #{status}"
+    {:noreply, state}
+  end
   defp call(cnode, fun, args \\ [], timeout \\ 5000) do
     Unifex.CNode.call(cnode, fun, args, timeout)
   end

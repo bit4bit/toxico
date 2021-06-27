@@ -22,8 +22,13 @@ spec self_set_status(status :: user_status) :: :ok
 spec self_get_status() :: user_status
 
 type connection_status :: :connection_none | :connection_tcp | :connection_udp
-spec self_get_connection_status() :: connection_status
-
 
 spec self_get_address() :: string
 spec self_get_nospam() :: nospam :: unsigned
+
+sends {:friend_request :: label, public_key :: string, message :: string}
+sends {:connection_status :: label, status :: connection_status}
+sends {:friend_request_error :: label, message :: string}
+
+spec friend_add_norequest(hex_public_key :: string) :: {:ok, friend_number :: unsigned} | {:error :: label, atom()}
+spec friend_add(hex_address :: string, message :: string) :: :ok | {:error :: label, atom()}
