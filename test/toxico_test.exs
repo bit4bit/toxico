@@ -24,19 +24,6 @@ defmodule ToxicoTest do
     end
   end
 
-  describe "bootstrap" do
-
-    test "single node tox" do
-      tox = start_supervised!({Toxico, []})
-
-      host = "tox1.mf-net.eu"
-      port = 33_445
-      public_key = "B3E5FA80DC8EBD1149AD2AB35ED8B85BD546DEDE261CA593234C619249419506"
-
-      :ok = Toxico.add_bootstrap(tox, host, port, public_key)
-    end
-  end
-
   describe "self" do
     test "set name" do
       tox = start_supervised!({Toxico, []})

@@ -202,6 +202,14 @@ void on_connection_status_cb(Tox *tox, TOX_CONNECTION connection_status, void *u
   send_connection_status(env, *(env->reply_to), 0, status);
 }
 
+void on_friend_message_cb(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, const uint8_t *message,
+                          size_t length, void *user_data) {
+  UnifexEnv *env = (UnifexEnv *)user_data;
+  State *state = (State *)env->state;
+
+  send_friend_message(env, *(env->reply_to), 0,  friend_number, message);
+}
+
 void on_friend_request_cb(Tox *tox, const uint8_t *public_key, const uint8_t *message, size_t length, void *user_data) {
   UnifexEnv *env = (UnifexEnv *)user_data;
   State *state = (State *)env->state;
@@ -219,6 +227,7 @@ UNIFEX_TERM friend_add(UnifexEnv *env, char *hex_address, char *message) {
   State *state = (State *)env->state;
   unsigned char address[TOX_ADDRESS_SIZE];
   TOX_ERR_FRIEND_ADD error;
+  uint32_t friend_number = 0;
 
   MUST_STATE(env);
 
@@ -226,10 +235,10 @@ UNIFEX_TERM friend_add(UnifexEnv *env, char *hex_address, char *message) {
     return unifex_raise(env, "failed to convert hex public key to binary");
   }
 
-  tox_friend_add(state->tox, address, message, strlen(message), &error);
+  friend_number = tox_friend_add(state->tox, address, message, strlen(message), &error);
   switch(error) {
   case TOX_ERR_FRIEND_ADD_OK:
-    return friend_add_result(env);
+    return friend_add_result(env, friend_number);
   case TOX_ERR_FRIEND_ADD_NULL:
     return friend_add_result_error(env, "null");
   case TOX_ERR_FRIEND_ADD_TOO_LONG:
@@ -288,6 +297,43 @@ UNIFEX_TERM friend_add_norequest(UnifexEnv *env, char *hex_public_key) {
   }
 }
 
+UNIFEX_TERM friend_send_message(UnifexEnv *env, unsigned int friend_number, MessageType type, char *message) {
+  State *state = (State *)env->state;
+  TOX_MESSAGE_TYPE message_type;
+  TOX_ERR_FRIEND_SEND_MESSAGE error;
+
+  MUST_STATE(env);
+
+  switch(type) {
+  case MESSAGE_NORMAL:
+    message_type = TOX_MESSAGE_TYPE_NORMAL;
+    break;
+  case MESSAGE_ACTION:
+    message_type = TOX_MESSAGE_TYPE_ACTION;
+    break;
+  }
+
+  tox_friend_send_message(state->tox, friend_number, message_type, message, strlen(message), &error);
+  switch(error) {
+  case TOX_ERR_FRIEND_SEND_MESSAGE_OK:
+    return friend_send_message_result(env);
+  case TOX_ERR_FRIEND_SEND_MESSAGE_NULL:
+    return friend_send_message_result_error(env, "null");
+  case TOX_ERR_FRIEND_SEND_MESSAGE_FRIEND_NOT_FOUND:
+    return friend_send_message_result_error(env, "not_found");
+  case TOX_ERR_FRIEND_SEND_MESSAGE_FRIEND_NOT_CONNECTED:
+    return friend_send_message_result_error(env, "not_connected");
+  case TOX_ERR_FRIEND_SEND_MESSAGE_SENDQ:
+    return friend_send_message_result_error(env, "sendq");
+  case TOX_ERR_FRIEND_SEND_MESSAGE_TOO_LONG:
+    return friend_send_message_result_error(env, "too_long");
+  case TOX_ERR_FRIEND_SEND_MESSAGE_EMPTY:
+    return friend_send_message_result_error(env, "empty");
+  default:
+    return unifex_raise(env, "notimplemented");
+  }
+}
+
 UNIFEX_TERM init(UnifexEnv *env) {
   TOX_ERR_NEW tox_error;
   State *state = (State *)unifex_alloc_state(env);
@@ -307,6 +353,7 @@ UNIFEX_TERM init(UnifexEnv *env) {
   }
 
   tox_callback_friend_request(tox, on_friend_request_cb);
+  tox_callback_friend_message(tox, on_friend_message_cb);
   tox_callback_self_connection_status(tox, on_connection_status_cb);
 
   state->tox_done = 0;

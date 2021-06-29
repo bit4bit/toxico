@@ -11,7 +11,7 @@ defmodule Toxico do
   defmodule State do
     @moduledoc false
 
-    defstruct [:cnode]
+    defstruct [:cnode, :handler]
   end
 
   defmodule Self do
@@ -22,6 +22,7 @@ defmodule Toxico do
 
   def start_link(opts \\ []) do
     {name, opts} = Keyword.pop(opts, :name, nil)
+    opts = Keyword.put_new(opts, :handler, self())
 
     GenServer.start_link(__MODULE__, opts, name: name)
   end
@@ -36,9 +37,17 @@ defmodule Toxico do
     GenServer.call(name, {:add_boostrap, host, port, public_key}, 60_000)
   end
 
-  @spec add_friend(GenServer.name(), String.t(), String) :: :ok | {:error, atom()}
+  @spec add_friend(GenServer.name(), String.t(), String) :: {:ok, integer()} | {:error, atom()}
   def add_friend(name, address, message) do
     GenServer.call(name, {:add_friend, address, message})
+  end
+
+  def add_friend_norequest(name, public_key) do
+    GenServer.call(name, {:add_friend_norequest, public_key})
+  end
+
+  def send_message_friend(name, friend_number, message) do
+    GenServer.call(name, {:send_message_friend, friend_number, :message_normal, message})
   end
 
   # bit4bit temporary only for testing
@@ -75,11 +84,13 @@ defmodule Toxico do
   # callbacks
 
   @impl true
-  def init(_opts) do
+  def init(opts) do
+    handler = Keyword.get(opts, :handler)
+
     {:ok, cnode} = Unifex.CNode.start_link(:tox)
     :ok = call(cnode, :init)
 
-    {:ok, %State{cnode: cnode}}
+    {:ok, %State{cnode: cnode, handler: handler}}
   end
 
   @impl true
@@ -130,22 +141,42 @@ defmodule Toxico do
 
     {:reply, reply, state}
   end
+  def handle_call({:add_friend_norequest, public_key}, _from, state) do
+    reply = call(state.cnode, :friend_add_norequest, [public_key])
+    {:reply, reply, state}
+  end
   def handle_call({:add_friend, address, message}, _from, state) do
     reply = call(state.cnode, :friend_add, [address, message])
     {:reply, reply, state}
   end
+  def handle_call({:send_message_friend, friend_number, message_type, message}, _from, state) do
+    reply = call(state.cnode, :friend_send_message, [friend_number, message_type, message])
+    {:reply, reply, state}
+  end
 
   @impl true
+  def handle_info({:friend_message, friend_number, message}, state) do
+    Logger.info "friend #{friend_number} message: #{message}"
+
+    send(state.handler, {self(), :friend_message, friend_number, message})
+
+    {:noreply, state}
+  end
   def handle_info({:friend_request, public_key, message}, state) do
     Logger.info "friend request: #{public_key} #{message}"
-    # bit4bit testing add as friend by default
-    :ok = call(state.cnode, :friend_add_norequest, [public_key])
+
+    send(state.handler, {self(), :friend_request, public_key, message})
+
     {:noreply, state}
   end
   def handle_info({:connection_status, status}, state) do
     Logger.info "connection status: #{status}"
+
+    send(state.handler, {self(), :connection_status, status})
+
     {:noreply, state}
   end
+
   defp call(cnode, fun, args \\ [], timeout \\ 5000) do
     Unifex.CNode.call(cnode, fun, args, timeout)
   end
