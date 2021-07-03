@@ -19,6 +19,8 @@ defmodule IntegrationToxicoTest do
       pid = self()
       tox = start_supervised!({Toxico, [handler: pid]})
       tox2 = start_supervised!({Toxico, [handler: pid]}, id: Toxico2)
+      :ok = Toxico.set_name(tox, "toxico1")
+      :ok = Toxico.set_name(tox2, "toxico1")
 
       receive do
         {^tox2, :connection_status, _} ->
@@ -55,6 +57,10 @@ defmodule IntegrationToxicoTest do
       # send message
       :ok = Toxico.send_message_friend(tox, tox2_friend, "hola desde tox")
       assert_receive {^tox2, :friend_message, _, "hola desde tox"}, 10_000
+
+      # get friend name
+      {:ok, friend_name} = Toxico.friend_name(tox2, friend_number)
+      assert friend_name == "toxico1"
     end
   end
 end

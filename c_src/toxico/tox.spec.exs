@@ -33,7 +33,7 @@ sends {:friend_request_error :: label, message :: string}
 spec friend_add_norequest(hex_public_key :: string) :: {:ok, friend_number :: unsigned} | {:error :: label, atom()}
 spec friend_delete(friend_number :: unsigned) :: :ok | {:error :: label, atom()}
 spec friend_add(hex_address :: string, message :: string) :: {:ok, friend_number :: unsigned} | {:error :: label, atom()}
-
+spec friend_get_name(friend_number :: unsigned) :: {:ok, string} | {:error :: label, atom()}
 type message_type :: :message_normal | :message_action
 
 sends {:friend_message :: label, friend_number :: unsigned, message :: string}

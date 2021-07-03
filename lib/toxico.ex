@@ -54,6 +54,10 @@ defmodule Toxico do
     GenServer.call(name, {:send_message_friend, friend_number, :message_normal, message})
   end
 
+  def friend_name(name, friend_number) when is_integer(friend_number) do
+    GenServer.call(name, {:friend_name, friend_number})
+  end
+
   # bit4bit temporary only for testing
   def add_default_bootstrap(name) do
     dhts = [
@@ -159,6 +163,10 @@ defmodule Toxico do
   end
   def handle_call({:send_message_friend, friend_number, message_type, message}, _from, state) do
     reply = call(state.cnode, :friend_send_message, [friend_number, message_type, message])
+    {:reply, reply, state}
+  end
+  def handle_call({:friend_name, friend_number}, _from, state) do
+    reply = call(state.cnode, :friend_get_name, [friend_number])
     {:reply, reply, state}
   end
 

@@ -223,6 +223,36 @@ void on_friend_request_cb(Tox *tox, const uint8_t *public_key, const uint8_t *me
   send_friend_request(env, *(env->reply_to), 0, public_key_id, message);
 }
 
+UNIFEX_TERM friend_get_name(UnifexEnv *env, unsigned int friend_number) {
+  State *state = (State *)env->state;
+  unsigned char *name = NULL;
+  size_t name_size = 0;
+  TOX_ERR_FRIEND_QUERY error;
+
+  MUST_STATE(env);
+
+  name_size = tox_friend_get_name_size(state->tox, friend_number, NULL);
+  if (name_size == 0)
+    return self_get_name_result(env, "");
+
+  name = (unsigned char *)malloc(sizeof(unsigned char) * name_size + 1);
+  if (name == NULL) return unifex_raise(env, "malloc");
+
+  tox_friend_get_name(state->tox, friend_number, name, &error);
+  name[name_size] = '\0';
+
+  switch(error) {
+  case TOX_ERR_FRIEND_QUERY_OK:
+    return friend_get_name_result(env, name);
+  case TOX_ERR_FRIEND_QUERY_NULL:
+    return friend_get_name_result_error(env, "null");
+  case TOX_ERR_FRIEND_QUERY_FRIEND_NOT_FOUND:
+    return friend_get_name_result_error(env, "friend_not_found");
+  default:
+    return unifex_raise(env, "unimplemented");
+  }
+}
+
 UNIFEX_TERM friend_delete(UnifexEnv *env, unsigned int friend_number) {
   State *state = (State *)env->state;
   TOX_ERR_FRIEND_DELETE error;
