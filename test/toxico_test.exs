@@ -87,4 +87,16 @@ defmodule ToxicoTest do
       assert nospam > 0
     end
   end
+
+  describe "friend" do
+    test "delete" do
+      tox = start_supervised!({Toxico, []})
+      tox2 = start_supervised!({Toxico, []}, id: Toxico2)
+
+      public_key = "3C31E5ADAFDD5483DA27DC0C05A9DF4350B63793B773FC083C2808CDC7086E6E"
+      {:ok, friend_number} =  Toxico.add_friend_norequest(tox2, public_key)
+      :ok = Toxico.delete_friend(tox2, friend_number)
+    end
+  end
+
 end

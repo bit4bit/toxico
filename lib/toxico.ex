@@ -46,6 +46,10 @@ defmodule Toxico do
     GenServer.call(name, {:add_friend_norequest, public_key})
   end
 
+  def delete_friend(name, friend_number) when is_integer(friend_number) do
+    GenServer.call(name, {:delete_friend, friend_number})
+  end
+
   def send_message_friend(name, friend_number, message) do
     GenServer.call(name, {:send_message_friend, friend_number, :message_normal, message})
   end
@@ -147,6 +151,10 @@ defmodule Toxico do
   end
   def handle_call({:add_friend, address, message}, _from, state) do
     reply = call(state.cnode, :friend_add, [address, message])
+    {:reply, reply, state}
+  end
+  def handle_call({:delete_friend, friend_number}, _from, state) do
+    reply = call(state.cnode, :friend_delete, [friend_number])
     {:reply, reply, state}
   end
   def handle_call({:send_message_friend, friend_number, message_type, message}, _from, state) do

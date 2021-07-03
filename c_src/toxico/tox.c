@@ -223,6 +223,23 @@ void on_friend_request_cb(Tox *tox, const uint8_t *public_key, const uint8_t *me
   send_friend_request(env, *(env->reply_to), 0, public_key_id, message);
 }
 
+UNIFEX_TERM friend_delete(UnifexEnv *env, unsigned int friend_number) {
+  State *state = (State *)env->state;
+  TOX_ERR_FRIEND_DELETE error;
+
+  MUST_STATE(env);
+
+  tox_friend_delete(state->tox, friend_number, &error);
+  switch(error) {
+  case TOX_ERR_FRIEND_DELETE_OK:
+    return friend_delete_result(env);
+  case TOX_ERR_FRIEND_DELETE_FRIEND_NOT_FOUND:
+    return friend_delete_result_error(env, "friend_not_found");
+  default:
+    return unifex_raise(env, "unimplemented");
+  }
+}
+
 UNIFEX_TERM friend_add(UnifexEnv *env, char *hex_address, char *message) {
   State *state = (State *)env->state;
   unsigned char address[TOX_ADDRESS_SIZE];
