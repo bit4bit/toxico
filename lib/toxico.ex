@@ -1,6 +1,6 @@
 defmodule Toxico do
   @moduledoc """
-  Documentation for `Toxico`.
+  Toxico bindings for ctox-core using Unifex.
   """
 
   use GenServer
@@ -27,63 +27,88 @@ defmodule Toxico do
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
+  @doc "tox api version"
   @spec version(GenServer.name()) :: Version.t() | nil
   def version(name) do
     GenServer.call(name, :version)
   end
 
+  @doc """
+  Sends a "get nodes" request to the given bootstrap node with IP, port, and public key to setup connections.
+  """
   @spec add_bootstrap(GenServer.name(), String.t(), integer(), String.t()) :: :ok | {:error, :null} | {:error, :bad_host} | {:error, :port}
   def add_bootstrap(name, host, port, public_key) when is_binary(host) and is_integer(port) and is_binary(public_key) do
     GenServer.call(name, {:add_boostrap, host, port, public_key}, 60_000)
   end
 
+  @doc """
+  Add a friend to the friend list and send a friend request.
+  """
   @spec add_friend(GenServer.name(), String.t(), String) :: {:ok, integer()} | {:error, atom()}
   def add_friend(name, address, message) do
     GenServer.call(name, {:add_friend, address, message})
   end
 
+
+  @doc """
+  Add a friend without sending a friend request.
+  """
+  @spec add_friend_norequest(GenServer.name(), String.t) :: {:ok, integer()} | {:error, atom()}
   def add_friend_norequest(name, public_key) do
     GenServer.call(name, {:add_friend_norequest, public_key})
   end
 
+  @doc """
+  Add a friend without sending a friend request.
+  """
+  @spec delete_friend(GenServer.name(), integer()) :: :ok | {:error, atom()}
   def delete_friend(name, friend_number) when is_integer(friend_number) do
     GenServer.call(name, {:delete_friend, friend_number})
   end
 
+  @doc """
+  Send a text chat message to an online friend.
+  """
+  @spec send_message_friend(GenServer.name(), integer(), String.t) :: :ok | {:error, atom()}
   def send_message_friend(name, friend_number, message) do
     GenServer.call(name, {:send_message_friend, friend_number, :message_normal, message})
   end
 
+  @doc """
+  Friend name
+  """
+  @spec friend_name(GenServer.name(), integer()) :: {:ok, String.t()} | {:error, atom()}
   def friend_name(name, friend_number) when is_integer(friend_number) do
     GenServer.call(name, {:friend_name, friend_number})
   end
 
-  # bit4bit temporary only for testing
-  def add_default_bootstrap(name) do
-    dhts = [
-      {"185.25.116.107", 33_445, "DA4E4ED4B697F2E9B000EEFE3A34B554ACD3F45F5C96EAEA2516DD7FF9AF7B43"},
-      {"79.140.30.52", 33_445, "FFAC871E85B1E1487F87AE7C76726AE0E60318A85F6A1669E04C47EB8DC7C72D"},
-      {"46.101.197.175", 443, "CD133B521159541FB1D326DE9850F5E56A6C724B5B8E5EB5CD8D950408E95707"}
-    ]
-
-    for {host, port, public_key} <- dhts do
-      add_bootstrap(name, host, port, public_key)
-    end
-  end
+  @doc """
+  Set the nickname for the Tox client.
+  """
+  @spec set_name(GenServer.name(), String.t()) :: :ok | {:error, atom()}
   def set_name(tox, name) do
     GenServer.call(tox, {:set_name, name})
   end
 
+  @doc """
+  Set the client's status message.
+  """
   @spec set_status_message(GenServer.name(), String.t()) :: :ok | {:error, atom()}
   def set_status_message(tox, message) do
     GenServer.call(tox, {:set_status_message, message})
   end
 
+  @doc """
+  Set the client's status.
+  """
   @spec set_status(GenServer.name(), :user_none | :user_away | :user_busy) :: :ok
   def set_status(tox, status) when is_atom(status) do
     GenServer.call(tox, {:set_status, status})
   end
 
+  @doc """
+  Query self client information.
+  """
   @spec self(GenServer.name()) :: %Self{}
   def self(name) do
     GenServer.call(name, :self)
