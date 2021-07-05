@@ -20,7 +20,9 @@ defmodule IntegrationToxicoTest do
       tox = start_supervised!({Toxico, [handler: pid]})
       tox2 = start_supervised!({Toxico, [handler: pid]}, id: Toxico2)
       :ok = Toxico.set_name(tox, "toxico1")
-      :ok = Toxico.set_name(tox2, "toxico1")
+      :ok = Toxico.set_status_message(tox, "toxico1 status message")
+      :ok = Toxico.set_name(tox2, "toxico2")
+      :ok = Toxico.set_status_message(tox2, "toxico2 status message")
 
       receive do
         {^tox2, :connection_status, _} ->
@@ -61,6 +63,10 @@ defmodule IntegrationToxicoTest do
       # get friend name
       {:ok, friend_name} = Toxico.friend_name(tox2, friend_number)
       assert friend_name == "toxico1"
+
+      # get friend status message
+      {:ok, friend_status_message} = Toxico.friend_status_message(tox2, friend_number)
+      assert friend_status_message == "toxico1 status message"
     end
   end
 end

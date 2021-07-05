@@ -223,6 +223,36 @@ void on_friend_request_cb(Tox *tox, const uint8_t *public_key, const uint8_t *me
   send_friend_request(env, *(env->reply_to), 0, public_key_id, message);
 }
 
+UNIFEX_TERM friend_get_status_message(UnifexEnv *env, unsigned int friend_number) {
+  State *state = (State *)env->state;
+  unsigned char *status_message = NULL;
+  size_t status_message_size = 0;
+  TOX_ERR_FRIEND_QUERY error;
+
+  MUST_STATE(env);
+
+  status_message_size = tox_friend_get_status_message_size(state->tox, friend_number, NULL);
+  if (status_message_size == SIZE_MAX)
+    return friend_get_status_message(env, "");
+
+  status_message = (unsigned char *)malloc(sizeof(unsigned char) * status_message_size + 1);
+  if (status_message == NULL) return unifex_raise(env, "malloc");
+
+  tox_friend_get_status_message(state->tox, friend_number, status_message, &error);
+  status_message[status_message_size] = '\0';
+
+  switch(error) {
+  case TOX_ERR_FRIEND_QUERY_OK:
+    return friend_get_status_message_result(env, status_message);
+  case TOX_ERR_FRIEND_QUERY_NULL:
+    return friend_get_status_message_result_error(env, "null");
+  case TOX_ERR_FRIEND_QUERY_FRIEND_NOT_FOUND:
+    return friend_get_status_message_result_error(env, "friend_not_found");
+  default:
+    return unifex_raise(env, "unimplemented");
+  }
+}
+
 UNIFEX_TERM friend_get_name(UnifexEnv *env, unsigned int friend_number) {
   State *state = (State *)env->state;
   unsigned char *name = NULL;

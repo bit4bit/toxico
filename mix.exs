@@ -10,6 +10,7 @@ defmodule Toxico.MixProject do
       compilers: [:unifex, :bundlex] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      package: package(),
       elixir_options: [
         warnings_as_errors: true
       ]

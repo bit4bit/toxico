@@ -83,6 +83,14 @@ defmodule Toxico do
   end
 
   @doc """
+  Status message of the friend
+  """
+  @spec friend_status_message(GenServer.name(), integer()) :: {:ok, String.t()} | {:error, atom()}
+  def friend_status_message(name, friend_number) when is_integer(friend_number) do
+    GenServer.call(name, {:friend_status_message, friend_number})
+  end
+
+  @doc """
   Set the nickname for the Tox client.
   """
   @spec set_name(GenServer.name(), String.t()) :: :ok | {:error, atom()}
@@ -192,6 +200,10 @@ defmodule Toxico do
   end
   def handle_call({:friend_name, friend_number}, _from, state) do
     reply = call(state.cnode, :friend_get_name, [friend_number])
+    {:reply, reply, state}
+  end
+  def handle_call({:friend_status_message, friend_number}, _from, state) do
+    reply = call(state.cnode, :friend_get_status_message, [friend_number])
     {:reply, reply, state}
   end
 
