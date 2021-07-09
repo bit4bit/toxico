@@ -202,6 +202,26 @@ void on_connection_status_cb(Tox *tox, TOX_CONNECTION connection_status, void *u
   send_connection_status(env, *(env->reply_to), 0, status);
 }
 
+void on_friend_status_cb(Tox *tox, uint32_t friend_number, TOX_USER_STATUS status, void *user_data) {
+  UnifexEnv *env = (UnifexEnv *)user_data;
+  State *state = (State *)env->state;
+  UserStatus user_status =  USER_NONE;
+
+  switch(status) {
+  case TOX_USER_STATUS_NONE:
+    user_status = USER_NONE;
+    break;
+  case TOX_USER_STATUS_BUSY:
+    user_status = USER_BUSY;
+    break;
+  case TOX_USER_STATUS_AWAY:
+    user_status = USER_AWAY;
+    break;
+  }
+
+  send_friend_status(env, *(env->reply_to), 0, friend_number, user_status);
+}
+
 void on_friend_message_cb(Tox *tox, uint32_t friend_number, TOX_MESSAGE_TYPE type, const uint8_t *message,
                           size_t length, void *user_data) {
   UnifexEnv *env = (UnifexEnv *)user_data;
@@ -429,6 +449,7 @@ UNIFEX_TERM init(UnifexEnv *env) {
     }
   }
 
+  tox_callback_friend_status(tox, on_friend_status_cb);
   tox_callback_friend_request(tox, on_friend_request_cb);
   tox_callback_friend_message(tox, on_friend_message_cb);
   tox_callback_self_connection_status(tox, on_connection_status_cb);

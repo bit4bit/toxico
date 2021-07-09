@@ -67,6 +67,9 @@ defmodule IntegrationToxicoTest do
       # get friend status message
       {:ok, friend_status_message} = Toxico.friend_status_message(tox2, friend_number)
       assert friend_status_message == "toxico1 status message"
+
+      :ok = Toxico.set_status(tox, :user_away)
+      assert_receive {^tox2, :friend_status, _, :user_away}, 5_000
     end
   end
 end

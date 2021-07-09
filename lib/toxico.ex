@@ -222,6 +222,13 @@ defmodule Toxico do
 
     {:noreply, state}
   end
+  def handle_info({:friend_status, friend_number, status}, state) do
+    Logger.info "friend_status: #{friend_number} #{status}"
+
+    send(state.handler, {self(), :friend_status, friend_number, status})
+
+    {:noreply, state}
+  end
   def handle_info({:connection_status, status}, state) do
     Logger.info "connection status: #{status}"
 
