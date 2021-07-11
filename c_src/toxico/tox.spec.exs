@@ -30,6 +30,7 @@ sends {:friend_request :: label, public_key :: string, message :: string}
 sends {:connection_status :: label, status :: connection_status}
 sends {:friend_request_error :: label, message :: string}
 sends {:friend_status :: label, friend_number :: unsigned, status :: user_status}
+sends {:friend_connection_status :: label, friend_number :: unsigned, status :: connection_status}
 
 spec friend_add_norequest(hex_public_key :: string) :: {:ok, friend_number :: unsigned} | {:error :: label, atom()}
 spec friend_delete(friend_number :: unsigned) :: :ok | {:error :: label, atom()}
