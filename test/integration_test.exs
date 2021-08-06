@@ -51,6 +51,8 @@ defmodule IntegrationToxicoTest do
       {:ok, friend_number} = Toxico.add_friend_norequest(tox2, public_key)
 
       :timer.sleep(3_000)
+      :ok = Toxico.set_typing(tox2, friend_number, :start)
+      assert_receive {^tox, :friend_typing, ^tox2_friend, :start}
 
       # send message
       :ok = Toxico.send_message_friend(tox2, friend_number, "hola desde tox2")

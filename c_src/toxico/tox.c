@@ -19,6 +19,21 @@ UNIFEX_TERM version(UnifexEnv *env) {
   return version_result_ok(env, major, minor, patch);
 }
 
+UNIFEX_TERM self_set_typing(UnifexEnv *env, unsigned int friend_number, int is_typing) {
+  State *state = (State *)env->state;
+  TOX_ERR_SET_TYPING err;
+
+  MUST_STATE(env);
+
+  tox_self_set_typing(state->tox, friend_number, is_typing, &err);
+  switch(err) {
+  case TOX_ERR_SET_TYPING_OK:
+    return self_set_typing_result(env);
+  case TOX_ERR_SET_TYPING_FRIEND_NOT_FOUND:
+    return self_set_typing_result_error(env, "friend_not_found");
+  }
+}
+
 UNIFEX_TERM self_set_status(UnifexEnv *env, UserStatus status) {
   State *state = (State *)env->state;
 
@@ -200,6 +215,13 @@ void on_connection_status_cb(Tox *tox, TOX_CONNECTION connection_status, void *u
   }
 
   send_connection_status(env, *(env->reply_to), 0, status);
+}
+
+void on_friend_typing_cb(Tox *tox, uint32_t friend_number, bool is_typing, void *user_data) {
+  UnifexEnv *env = (UnifexEnv *)user_data;
+  State *state = (State *)env->state;
+
+  send_friend_typing(env, *(env->reply_to), 0, friend_number, is_typing);
 }
 
 void on_friend_status_cb(Tox *tox, uint32_t friend_number, TOX_USER_STATUS status, void *user_data) {
@@ -473,6 +495,7 @@ UNIFEX_TERM init(UnifexEnv *env) {
   tox_callback_friend_status(tox, on_friend_status_cb);
   tox_callback_friend_request(tox, on_friend_request_cb);
   tox_callback_friend_message(tox, on_friend_message_cb);
+  tox_callback_friend_typing(tox, on_friend_typing_cb);
   tox_callback_self_connection_status(tox, on_connection_status_cb);
 
   state->tox_done = 0;

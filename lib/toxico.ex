@@ -91,6 +91,14 @@ defmodule Toxico do
   end
 
   @doc """
+  Set the client's typing status for a friend.
+  """
+  @spec set_typing(GenServer.name(), integer(), :start | :end) :: :ok | {:error, term()}
+  def set_typing(name, friend_number, status) when status in [:start, :end] do
+    GenServer.call(name, {:set_typing, friend_number, status})
+  end
+
+  @doc """
   Set the nickname for the Tox client.
   """
   @spec set_name(GenServer.name(), String.t()) :: :ok | {:error, atom()}
@@ -206,6 +214,14 @@ defmodule Toxico do
     reply = call(state.cnode, :friend_get_status_message, [friend_number])
     {:reply, reply, state}
   end
+  def handle_call({:set_typing, friend_number, status}, _from, state) do
+    status = case status do
+               :start -> true
+               :end -> false
+             end
+    reply = call(state.cnode, :self_set_typing, [friend_number, status])
+    {:reply, reply, state}
+  end
 
   @impl true
   def handle_info({:friend_message, friend_number, message}, state) do
@@ -232,6 +248,14 @@ defmodule Toxico do
   def handle_info({:friend_connection_status, friend_number, status}, state) do
     Logger.info "friend_connection_status: #{friend_number} #{status}"
     send(state.handler, {self(), :friend_connection_status, friend_number, status})
+
+    {:noreply, state}
+  end
+  def handle_info({:friend_typing, friend_number, is_typing}, state) do
+    status = if is_typing, do: :start, else: :end
+    Logger.info "friend_typing: #{friend_number} #{status}"
+
+    send(state.handler, {self(), :friend_typing, friend_number, status})
 
     {:noreply, state}
   end

@@ -41,3 +41,6 @@ type message_type :: :message_normal | :message_action
 
 sends {:friend_message :: label, friend_number :: unsigned, message :: string}
 spec friend_send_message(friend_number :: unsigned, type :: message_type, message :: string) :: :ok | {:error :: label, atom()}
+
+sends {:friend_typing :: label, friend_number :: unsigned, is_typing :: bool}
+spec self_set_typing(friend_number :: unsigned, is_typing :: bool) :: :ok | {:error :: label, atom()}
