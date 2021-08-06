@@ -4,7 +4,7 @@ defmodule Toxico.MixProject do
   def project do
     [
       app: :toxico,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.12",
       description: "tox protocol binding",
       compilers: [:unifex, :bundlex] ++ Mix.compilers(),
